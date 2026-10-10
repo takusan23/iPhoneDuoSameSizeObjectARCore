@@ -15,6 +15,7 @@
  */
 package io.github.takusan23.iphoneduosameobjectarcore.kotlin.helloar
 
+import android.net.Uri
 import android.opengl.GLES30
 import android.opengl.Matrix
 import android.util.Log
@@ -88,7 +89,7 @@ class HelloArRenderer(val activity: HelloArActivity) :
         val CUBEMAP_RESOLUTION = 16
         val CUBEMAP_NUMBER_OF_IMPORTANCE_SAMPLES = 32
 
-        val OBJECT_LIST = listOf(
+        private val OBJECT_LIST = listOf(
             "google_pixel_11_profold_collapsed_same_size_obj.obj",
             "google_pixel_11_profold_expanded_same_size_obj.obj",
             "iphone_duo_collapsed_same_size_obj.obj",
@@ -96,7 +97,6 @@ class HelloArRenderer(val activity: HelloArActivity) :
         )
     }
 
-    lateinit var render: SampleRender
     lateinit var planeRenderer: PlaneRenderer
     lateinit var backgroundRenderer: BackgroundRenderer
     lateinit var virtualSceneFramebuffer: Framebuffer
@@ -112,7 +112,8 @@ class HelloArRenderer(val activity: HelloArActivity) :
     var lastPointCloudTimestamp: Long = 0
 
     // Virtual object key:OBJECT_LIST value:Mesh
-    private val virtualObjectMeshHashMap = hashMapOf<String, Mesh>()
+    val virtualObjectMeshHashMap: Map<String, Mesh>
+        field = hashMapOf<String, Mesh>()
     lateinit var virtualObjectShader: Shader
     lateinit var virtualObjectAlbedoTexture: Texture
     lateinit var virtualObjectAlbedoInstantPlacementTexture: Texture
@@ -148,6 +149,13 @@ class HelloArRenderer(val activity: HelloArActivity) :
 
     fun removeAnchors(anchor: WrappedAnchor) {
         wrappedAnchors -= anchor
+    }
+
+    private val userAddObjectUriList = mutableListOf<Uri>()
+
+    fun addUserObject(uri: Uri) {
+        // Activity に戻ってくるときに OpenGL ES (SurfaceView) のコンテキストも作り直されるのでそのタイミングで Mesh を作る
+        userAddObjectUriList += uri
     }
 
     override fun onResume(owner: LifecycleOwner) {
@@ -245,7 +253,10 @@ class HelloArRenderer(val activity: HelloArActivity) :
                     Texture.ColorFormat.LINEAR
                 )
             // assets にある obj をまとめて読み込む
-            virtualObjectMeshHashMap += OBJECT_LIST.associateWith { Mesh.createFromAsset(render, "models/$it") }
+            virtualObjectMeshHashMap.clear()
+            virtualObjectMeshHashMap += OBJECT_LIST.associateWith {
+                Mesh.createFromAsset(render, "models/$it")
+            }
             virtualObjectShader =
                 Shader.createFromAssets(
                     render,
@@ -267,6 +278,19 @@ class HelloArRenderer(val activity: HelloArActivity) :
     override fun onSurfaceChanged(render: SampleRender, width: Int, height: Int) {
         displayRotationHelper.onSurfaceChanged(width, height)
         virtualSceneFramebuffer.resize(width, height)
+
+        userAddObjectUriList
+            .filter { it.toString() !in virtualObjectMeshHashMap.keys } // Uri を key にしているので distinct できる
+            .forEach { uri->
+                val fileName = uri.toString()
+                // .obj であること
+                if (!fileName.endsWith(suffix = ".obj", ignoreCase = true)) return
+                activity.contentResolver.openInputStream(uri)?.use { inputStream ->
+                    val mesh = Mesh.createFromInputStream(render, inputStream)
+                    virtualObjectMeshHashMap[fileName] = mesh
+                    nextTapAddMeshObjName = fileName
+                }
+            }
     }
 
     override fun onDrawFrame(render: SampleRender) {

@@ -17,15 +17,17 @@ package io.github.takusan23.iphoneduosameobjectarcore.java.common.samplerender;
 
 import android.opengl.GLES30;
 import android.util.Log;
-import de.javagl.obj.Obj;
-import de.javagl.obj.ObjData;
-import de.javagl.obj.ObjReader;
-import de.javagl.obj.ObjUtils;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+
+import de.javagl.obj.Obj;
+import de.javagl.obj.ObjData;
+import de.javagl.obj.ObjReader;
+import de.javagl.obj.ObjUtils;
 
 /**
  * A collection of vertices, faces, and other attributes that define how to render a 3D object.
@@ -147,6 +149,26 @@ public class Mesh implements Closeable {
 
       return new Mesh(render, Mesh.PrimitiveMode.TRIANGLES, indexBuffer, vertexBuffers);
     }
+  }
+
+  public static Mesh createFromInputStream(SampleRender render, InputStream inputStream) throws IOException {
+    Obj obj = ObjUtils.convertToRenderable(ObjReader.read(inputStream));
+
+    // Obtain the data from the OBJ, as direct buffers:
+    IntBuffer vertexIndices = ObjData.getFaceVertexIndices(obj, /*numVerticesPerFace=*/ 3);
+    FloatBuffer localCoordinates = ObjData.getVertices(obj);
+    FloatBuffer textureCoordinates = ObjData.getTexCoords(obj, /*dimensions=*/ 2);
+    FloatBuffer normals = ObjData.getNormals(obj);
+
+    VertexBuffer[] vertexBuffers = {
+      new VertexBuffer(render, 3, localCoordinates),
+      new VertexBuffer(render, 2, textureCoordinates),
+      new VertexBuffer(render, 3, normals),
+    };
+
+    IndexBuffer indexBuffer = new IndexBuffer(render, vertexIndices);
+
+    return new Mesh(render, Mesh.PrimitiveMode.TRIANGLES, indexBuffer, vertexBuffers);
   }
 
   @Override

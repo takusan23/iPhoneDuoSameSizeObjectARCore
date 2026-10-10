@@ -20,7 +20,9 @@ import android.text.format.DateUtils
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -120,7 +122,19 @@ class HelloArActivity : ComponentActivity() {
                 if (isShowObjSelectBottomSheet.value) {
                     ModalBottomSheet(onDismissRequest = { isShowObjSelectBottomSheet.value = false }) {
                         LazyColumn {
-                            items(HelloArRenderer.OBJECT_LIST) { obj ->
+                            item {
+                                val filePicker = rememberLauncherForActivityResult(
+                                    contract = ActivityResultContracts.OpenDocument(),
+                                    onResult = { uri ->
+                                        renderer.addUserObject(uri ?: return@rememberLauncherForActivityResult)
+                                        isShowObjSelectBottomSheet.value = false
+                                    }
+                                )
+                                Button(onClick = { filePicker.launch(arrayOf("application/octet-stream")) }) {
+                                    Text(text = "任意の 3D オブジェクトを追加する")
+                                }
+                            }
+                            items(renderer.virtualObjectMeshHashMap.keys.toList()) { obj ->
                                 Text(
                                     text = obj,
                                     modifier = Modifier
