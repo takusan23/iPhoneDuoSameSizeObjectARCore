@@ -117,7 +117,8 @@ class HelloArRenderer(val activity: HelloArActivity) :
     lateinit var virtualObjectAlbedoTexture: Texture
     lateinit var virtualObjectAlbedoInstantPlacementTexture: Texture
 
-    private val wrappedAnchors = mutableListOf<WrappedAnchor>()
+    val wrappedAnchors: List<WrappedAnchor>
+        field = mutableListOf<WrappedAnchor>()
 
     // Environmental HDR
     lateinit var dfgTexture: Texture
@@ -144,6 +145,10 @@ class HelloArRenderer(val activity: HelloArActivity) :
 
     // 次追加するオブジェクト
     var nextTapAddMeshObjName = OBJECT_LIST[0]
+
+    fun removeAnchors(anchor: WrappedAnchor) {
+        wrappedAnchors -= anchor
+    }
 
     override fun onResume(owner: LifecycleOwner) {
         displayRotationHelper.onResume()
@@ -398,7 +403,7 @@ class HelloArRenderer(val activity: HelloArActivity) :
 
         // Visualize anchors created by touch.
         render.clear(virtualSceneFramebuffer, 0f, 0f, 0f, 0f)
-        for ((anchor, trackable, mesh) in wrappedAnchors.filter { it.anchor.trackingState == TrackingState.TRACKING }) {
+        for ((anchor, trackable, _, mesh) in wrappedAnchors.filter { it.anchor.trackingState == TrackingState.TRACKING }) {
             // Get the current pose of an Anchor in world space. The Anchor pose is updated
             // during calls to session.update() as ARCore refines its estimate of the world.
             anchor.pose.toMatrix(modelMatrix, 0)
@@ -530,7 +535,15 @@ class HelloArRenderer(val activity: HelloArActivity) :
             // Adding an Anchor tells ARCore that it should track this position in
             // space. This anchor is created on the Plane to place the 3D model
             // in the correct position relative both to the world and to the plane.
-            wrappedAnchors.add(WrappedAnchor(firstHitResult.createAnchor(), firstHitResult.trackable, virtualObjectMeshHashMap[nextTapAddMeshObjName]!!))
+            wrappedAnchors.add(
+                WrappedAnchor(
+                    anchor = firstHitResult.createAnchor(),
+                    trackable = firstHitResult.trackable,
+                    objName = nextTapAddMeshObjName,
+                    mesh = virtualObjectMeshHashMap[nextTapAddMeshObjName]!!,
+                    addTimeMs = System.currentTimeMillis()
+                )
+            )
 
             // For devices that support the Depth API, shows a dialog to suggest enabling
             // depth-based occlusion. This dialog needs to be spawned on the UI thread.
@@ -546,8 +559,10 @@ class HelloArRenderer(val activity: HelloArActivity) :
  * Associates an Anchor with the trackable it was attached to. This is used to be able to check
  * whether or not an Anchor originally was attached to an {@link InstantPlacementPoint}.
  */
-private data class WrappedAnchor(
+data class WrappedAnchor(
     val anchor: Anchor,
     val trackable: Trackable,
-    val mesh: Mesh
+    val objName: String,
+    val mesh: Mesh,
+    val addTimeMs: Long
 )
