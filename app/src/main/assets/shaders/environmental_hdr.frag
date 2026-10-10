@@ -222,8 +222,11 @@ void Pbr_CreateMaterialParameters(const in vec2 texCoord,
                                   const in ShadingParameters shading,
                                   out MaterialParameters material) {
   // Read the material parameters from the textures
-  vec3 albedo = texture(albedoTexture, texCoord).rgb;
-  vec3 roughnessMetallicAmbientOcclusion = texture(pbrTexture, texCoord).rgb;
+  // vec3 albedo = texture(albedoTexture, texCoord).rgb;
+  // vec3 roughnessMetallicAmbientOcclusion = texture(pbrTexture, texCoord).rgb;
+  // テクスチャを作ってないので
+  vec3 albedo = vec3(1.0, 1.0, 1.0);
+  vec3 roughnessMetallicAmbientOcclusion = vec3(0.5, 0.0, 1.0);
   // Roughness inputs are perceptually linear; convert them to regular roughness
   // values. Roughness levels approaching 0 will make specular reflections
   // completely invisible, so cap the lower bound. This value was chosen such
