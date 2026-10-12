@@ -24,7 +24,7 @@ android {
         version = release(37)
     }
     defaultConfig {
-        applicationId = "io.github.takusan23.iphoneduosameobjectarcore"
+        applicationId = "io.github.takusan23.iphoneduosamesizeobjectarcore"
 
         // AR Optional apps must declare minSdkVersion >= 14.
         // AR Required apps must declare minSdkVersion >= 24.
