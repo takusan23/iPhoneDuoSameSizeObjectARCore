@@ -34,5 +34,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "iPhoneDuoSameObjectARCore" // ここはプロジェクトの名前にしてください
+rootProject.name = "iPhoneDuoSameSizeObjectARCore" // ここはプロジェクトの名前にしてください
 include(":app")

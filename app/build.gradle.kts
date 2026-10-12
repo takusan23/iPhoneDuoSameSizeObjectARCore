@@ -19,7 +19,7 @@ plugins {
 }
 
 android {
-    namespace = "io.github.takusan23.iphoneduosameobjectarcore"
+    namespace = "io.github.takusan23.iphoneduosamesizeobjectarcore"
     compileSdk {
         version = release(37)
     }
